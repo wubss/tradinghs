@@ -13,51 +13,23 @@ import Data.Maybe
 import Control.Lens
 
 import Data.Aeson
-import Data.Map as Map
 
-import qualified Data.ByteString.Lazy.Internal as BS
+import qualified Data.ByteString.Lazy as BS
 
 main :: IO ()
 main = getKrakenPair "ETHXBT"
 
-data Pair = ETHXBT | ETHGBP
-    deriving (Show)
-
-type Volume = Double
-type Price = Double
-data PriceInstance = PriceInstance Price Volume
-    deriving (Show)
-
-data Ticker = Ticker {
-        ask :: PriceInstance,
-        bid :: PriceInstance,
-        last :: PriceInstance,
-        volDay :: Volume,
-        vol24 :: Volume,
-        lowToday :: Price,
-        low24 :: Price,
-        highToday :: Price,
-        high24 :: Price
-    } deriving (Show)
-
-instance FromJSON Ticker where
-  parseJSON = withObject "result" $ \o -> do
-    -- authorO :: Object
-    result <- o .: "result"
-    pair <- result .: "XETHXXBT"
-    [askPrice, askVol, askVol2] <- pair .: "a"
-    let ask = PriceInstance askPrice askVol
-    -- And finally return the value.
-    return Ticker {
-        ask = ask
-    }
-
 getKrakenPair :: String -> IO ()
 getKrakenPair pair = do
     requestBody <- makePublicGetRequest $ "Ticker?pair=" ++ pair
-    print requestBody
+    case requestBody of
+        Just a -> do
+            --putStrLn $ show a
+            let ticker = tickerFromJSON a
+            print ticker
+        Nothing -> putStrLn "Request failed."
+    --print ticker
     --let t = toTicker requestBody
-
 
 makePublicGetRequest :: String -> IO (Maybe BS.ByteString)
 makePublicGetRequest uri = do
@@ -77,6 +49,3 @@ makeGetRequest url = do
 
 krakenUrl :: String -> String
 krakenUrl s = "https://api.kraken.com/0/" ++ s
-
-
---toTicker :: String -> Ticker
